@@ -1,0 +1,6 @@
+#!/bin/bash
+echo "Building the binary application"
+pasm -b Toggle.p
+
+echo "Building the host code"
+gcc Toggle.c -o toggle -lpthread -lprussdrv

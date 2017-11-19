@@ -1,0 +1,6 @@
+#!/bin/bash
+echo "Building the PRU DAC binary application"
+pasm -b DAC.p
+
+echo "Building the PRU DAC host code"
+gcc DAC.c -o dac -lpthread -lprussdrv
