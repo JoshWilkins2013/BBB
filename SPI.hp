@@ -1,0 +1,139 @@
+#ifndef _SPI_HP_
+#define _SPI_HP_
+
+////////////////////////////////////////////////////////////////
+//-------------------------- Setup ---------------------------//
+////////////////////////////////////////////////////////////////
+
+// Local registers given names (prefixed r) to keep track of them
+#define rDDS_ADDR	r2	// DDS ADDR to read/write to
+#define rDDS_VAL	r3	// DDS Value to write
+#define rMOSI_VAL	r4	// DDS addr and val combined
+#define rNUM_REGS	r5	// Number of DDS Registers to setup
+#define rNUM_BITS	r6	// Number of bit to be transferred to DDS
+#define rMISO_VAL	r7	// Value returned by MISO
+#define rREAD_FLAG	r8.t0	// Set to read instead of write from DDS_ADDR
+#define rDELAY		r9	// Time Delays (ie. SCK_DELAY)
+
+#define DDS
+
+#ifdef DDS
+// PRU0 DDS Pin Configurations (prefixed p):
+#define pSYNC	r31.t7	// P9.25
+#define pCS		r30.t5	// P9.27
+#define pMISO	r31.t3	// P9.28
+#define pMOSI	r30.t1	// P9.29
+#define pSCK	r30.t2	// P9.30
+#define pUPDATE	r30.t0	// P9.31
+
+#else
+// PRU1 DAC Pin Configurations (Tested on PRU0, assumed working on PRU1):
+#define pCS		r30.t8	// P8.27
+#define pMISO	r31.t10	// P8.28
+#define pMOSI	r30.t9	// P8.29
+#define pSCK	r30.t11	// P8.30
+
+#endif
+
+#define SCK_DELAY	1
+#define READ_DELAY	450
+
+
+////////////////////////////////////////////////////////////////
+//----------------------- SPI Methods ------------------------//
+////////////////////////////////////////////////////////////////
+
+// Send address and value pair
+.macro	SENDBYTE
+.mparam	addr, val
+	SENDADDR addr
+	SENDVAL val
+.endm
+
+// Send address (2 bytes)
+.macro SENDADDR
+.mparam	addr
+	CLR pCS				// Prepare for data transfer by clearing chip select pin
+	MOV rMOSI_VAL, addr
+	MOV rNUM_BITS, 24	// Number of Bits to transfer (Reg Addr (16) + Reg Val (8))
+CONTINUE:
+	SPICLK_16
+	SUB rNUM_BITS, rNUM_BITS, 1	// Count down through the bits
+	QBNE CONTINUE, rNUM_BITS, 8	// Repeat for 16 bits
+.endm
+
+.macro READADDR
+.mparam	addr
+	CLR pCS				// Prepare for data transfer by clearing chip select pin
+	MOV rMOSI_VAL, addr
+	SET rMOSI_VAL, rMOSI_VAL, 15	// If read flag: set read bit
+	MOV rNUM_BITS, 24	// Number of Bits to transfer (Reg Addr (16) + Reg Val (8))
+CONTINUE:
+	SPICLK_16
+	SUB rNUM_BITS, rNUM_BITS, 1	// Count down through the bits
+	QBNE CONTINUE, rNUM_BITS, 0	// Repeat for 16 bits
+	SET pCS
+	MOV rDELAY, READ_DELAY
+MISOHIGH:
+	SUB rDELAY, rDELAY, 1
+	QBNE MISOHIGH, rDELAY, 0
+.endm
+
+// Send 1 Byte
+.macro SENDVAL
+.mparam val
+	CLR pCS				// Prepare for data transfer by clearing chip select pin
+	MOV rMOSI_VAL, val
+	MOV rNUM_BITS, 8	// Number of Bits to transfer (Reg Addr (16) + Reg Val (8))
+CONTINUE:
+	SPICLK_8
+	SUB rNUM_BITS, rNUM_BITS, 1	// Count down through the bits
+	QBNE CONTINUE, rNUM_BITS, 0	// Repeat for 16 bits
+.endm
+
+/////////////////////////////////////////////////////////////////
+//-------------------- One SPI Clock Cycle --------------------//
+/////////////////////////////////////////////////////////////////
+
+.macro SPICLK_16
+	QBBC DATALOW, rMOSI_VAL.t15// The write state needs to be set right here -- bit 23 shifted left
+	SET	pMOSI		// Set MOSI line high (Did not branch above if rMOSI_VAL.t23=LOW)
+	JMP NEXT
+DATALOW:
+	CLR	pMOSI
+NEXT:
+	DATACONTD	// Jump to DATACONTD
+.endm
+
+.macro SPICLK_8
+	QBBC DATALOW, rMOSI_VAL.t7// The write state needs to be set right here -- bit 23 shifted left
+	SET	pMOSI		// Set MOSI line high (Did not branch above if rMOSI_VAL.t23=LOW)
+	JMP NEXT
+DATALOW:
+	CLR	pMOSI
+NEXT:
+	DATACONTD
+.endm
+
+.macro DATACONTD		// Time after setting data, before setting sck
+	SET	pSCK		// Set the clock high
+	CLR pMOSI		// Clear the Data Out Line (MOSI)
+	MOV rDELAY, SCK_DELAY		// time for clock low -- assuming clock low before cycle
+SCKHIGH:
+	SUB rDELAY, rDELAY, 1		// decrement the counter by 1 and loop (next line)
+	QBNE SCKHIGH, rDELAY, 0
+	LSL	rMOSI_VAL, rMOSI_VAL, 1	// Bit shift MOSI_VAL (MOSI data) one bit left
+	CLR	pSCK		// Set the clock low
+	
+	QBBC SCKLOW, pMISO	// If data in is low, just shift rNUM_BITS
+	OR rMISO_VAL, rMISO_VAL, 0x000001	// Otherwise, set the last bit of rNUM_BITS then shift
+SCKLOW:
+	LSL	rMISO_VAL, rMISO_VAL, 1		// Shift the data in register left to prepare for next bit read
+.endm
+
+.macro UPDATEREG
+	SENDBYTE 0x0005, 0x01
+	SET pCS
+.endm
+
+#endif //_PRU_memAccessPRUDataRAM_HP_
