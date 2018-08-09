@@ -1,0 +1,19 @@
+GPIO pins unassociated with the PRU cannot be accessed in the assembly code.
+Meaning only GPIO pins in registers 30 or 31 can be accessed.
+
+These other GPIO pins should work, but I could not get them to.
+See these link for an example program to test the GPIO via the PRU
+
+https://github.com/derekmolloy/exploringBB/tree/master/chp13/gpioLEDButton
+
+It also seems like the clocking systems for GPIO 1, 2 and 3 are disabled (GPIO0 will be always enabled) by default when booting up the BBB
+Supposed fix to this is to run these cmds to export a pin from each of the GPIO banks:
+# echo 5 > /sys/class/gpio/export
+# echo 65 > /sys/class/gpio/export
+# echo 105 > /sys/class/gpio/export
+
+I've tried this, but it still would not work for me.
+One additional thing you could try that I did not, is exporting the number and direction of each pin you want to use
+
+echo 30 > /sys/class/gpio/export
+echo out > /sys/class/gpio/gpio30/direction

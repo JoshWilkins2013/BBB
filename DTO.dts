@@ -10,32 +10,39 @@
    version = "00A0";
 
    /* This overlay uses the following resources */
-   exclusive-use = "P8.27", "P8.28", "P8.29", "P8.30", "P8.39", "P9.25", "P9.27", "P9.28", "P9.29", "P9.30", "P9.31", "pru0", "pru1";
+   exclusive-use = "P8.15", "P8.16", "P8.27", "P8.28", "P8.29", "P8.30", "P9.25", "P9.27", "P9.28", "P9.29", "P9.30", "P9.31", "pru0", "pru1";
 
    fragment@0 {
       target = <&am33xx_pinmux>;
       __overlay__ {
-         pru_pru_pins: pinmux_pru_pru_pins {   // The PRU pin modes
+	     pru_pru_pins: pinmux_pru_pru_pins {
             pinctrl-single,pins = <
-				// DDS PRU Pins
-				0x1a4 0x2e  // SYNC   | P9_25 pru0_r31_7  | INPUT
-				0x1a4 0x0d  // CS     | P9_27 pru0_r30_5  | OUTPUT
-				0x19c 0x2e  // MISO   | P9_28 pru0_r31_3  | INPUT
-				0x194 0x0d  // MOSI   | P9_29 pru0_r30_1  | OUTPUT
-				0x198 0x0d  // CLK    | P9_30 pru0_r30_2  | OUTPUT
-				0x190 0x0d  // UPDATE | P9_31 pru0_r30_0  | OUTPUT
 				
-				// DAC PRU Pins
-				0x0e0 0x0d  // CS     | P8_27 pru1_r30_8  | OUTPUT
-				0x0e8 0x2e  // MISO   | P8_28 pru1_r31_10 | INPUT
-				0x0e4 0x0d  // MOSI   | P8_29 pru1_r30_9  | OUTPUT
-				0x0ec 0x0d  // CLK    | P8_30 pru1_r30_11 | OUTPUT
-            >;
+				// DO NOT USE THIS PIN
+				// 0x184 0x2e // P9_24 pru_r31_16
+				
+				0x03c 0x2e  // MODE6 | P8_15 pru_r31_15 | INPUT  
+				0x038 0x2e  // MODE6 | P8_16 pru_r31_14 | INPUT  
+				
+				0x1ac 0x2e  // MODE6 | P9_25 pru_r31_7  | INPUT  
+				0x1a4 0x0d  // MODE5 | P9_27 pru_r30_5  | OUTPUT 
+				0x19c 0x0d  // MODE5 | P9_28 pru_r30_3  | OUTPUT 
+				
+				0x194 0x0d  // MODE5 | P9_29 pru_r30_1  | OUTPUT 
+				0x198 0x0d  // MODE5 | P9_30 pru_r30_2  | OUTPUT 
+				0x190 0x0d  // MODE5 | P9_31 pru_r30_0  | OUTPUT 
+				
+				0x0e0 0x0d  // MODE5 | P8_27 pru1_r30_8  | OUTPUT
+				0x0e8 0x2e  // MODE6 | P8_28 pru1_r31_10 | INPUT 
+				0x0e4 0x0d  // MODE5 | P8_29 pru1_r30_9  | OUTPUT
+				0x0ec 0x0d  // MODE5 | P8_30 pru1_r30_11 | OUTPUT
+			>;
          };
       };
    };
-
-   fragment@1 {         // Enable the PRUSS
+   
+   // Enable the PRUSS
+   fragment@1 {
       target = <&pruss>;
       __overlay__ {
          status = "okay";

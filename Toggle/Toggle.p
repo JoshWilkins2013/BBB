@@ -5,11 +5,10 @@
 .origin 0					// start of program in PRU memory
 .entrypoint START			// program entry point (for a debugger)
 
-#define DELAY	10
+#define DELAY	10000000
 #define PIN	r30.t5
 
 START:
-	MOV	r1, 0x00000000		// Load the base address into r1
 	MOV r0, DELAY
 	SET PIN
 	

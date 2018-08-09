@@ -24,7 +24,6 @@
 #define pMISO	r31.t3	// P9.28
 #define pMOSI	r30.t1	// P9.29
 #define pSCK	r30.t2	// P9.30
-#define pUPDATE	r30.t0	// P9.31
 
 #else
 // PRU1 DAC Pin Configurations (Tested on PRU0, assumed working on PRU1):

@@ -1,8 +1,0 @@
-#!/bin/bash
-echo "Building the PRU DDS binary application"
-pasm -b DDS_Setup.p
-pasm -b DDS.p
-
-echo "Building the DDS host and setup code"
-gcc DDS_Setup.c -o dds_setup -lpthread -lprussdrv
-gcc DDS.c -o dds -lpthread -lprussdrv -lm
